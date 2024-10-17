@@ -1,0 +1,112 @@
+#include <ESP8266WiFi.h>
+#include <ESP8266WebServer.h>
+
+// Wi-Fi credentials
+const char* ssid = "Redmi 12 5G";
+const char* password = "12345@12345";
+
+// Define pump pins
+#define PUMP1_PIN D5
+#define PUMP2_PIN D6
+#define PUMP3_PIN D7
+
+ESP8266WebServer server(80);
+
+void setup() {
+  Serial.begin(9600);
+
+  // Initialize pump control pins
+  pinMode(PUMP1_PIN, OUTPUT);
+  pinMode(PUMP2_PIN, OUTPUT);
+  pinMode(PUMP3_PIN, OUTPUT);
+
+  // Initially, turn off all pumps
+  digitalWrite(PUMP1_PIN, HIGH);
+  digitalWrite(PUMP2_PIN, HIGH);
+  digitalWrite(PUMP3_PIN, HIGH);
+
+  // Connect to Wi-Fi
+  WiFi.begin(ssid, password);
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(1000);
+    Serial.println("Connecting to WiFi...");
+  }
+  Serial.println("Connected to WiFi");
+
+  // Print the IP address
+  Serial.println(WiFi.localIP());
+
+  // Define server routes
+  server.on("/", handleRoot);
+  server.on("/tank1", handleTank1);
+  server.on("/tank2", handleTank2);
+  server.on("/tank3", handleTank3);
+
+  // Start the server
+  server.begin();
+  Serial.println("HTTP server started");
+}
+
+void loop() {
+  server.handleClient();
+}
+
+void handleRoot() {
+  String html = "<html><head>";
+  html += "<style>";
+  html += "body { font-family: Arial, sans-serif; background-color: #f4f4f4; text-align: center; padding: 20px; }";
+  html += "h1 { color: #333; }";
+  html += "h2 { color: #666; margin: 20px 0; }";
+  html += "button { padding: 15px 30px; margin: 10px; border: none; border-radius: 5px; font-size: 16px; cursor: pointer; }";
+  html += ".on-button { background-color: #28a745; color: white; }";
+  html += ".off-button { background-color: #dc3545; color: white; }";
+  html += "button:hover { opacity: 0.85; }";
+  html += ".container { background-color: #fff; padding: 20px; border-radius: 10px; box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1); max-width: 500px; margin: 0 auto; }";
+  html += "</style>";
+  html += "</head><body>";
+  html += "<div class='container'>";
+  html += "<h1> SUSTAINABLE AQUAPONICS SYSTEM</h1>";
+  html += "<h2>Tank 1 - FISH TANK to FILTER TANK</h2>";
+  html += "<a href=\"/tank1?state=on\"><button class='on-button'>Turn ON</button></a>";
+  html += "<a href=\"/tank1?state=off\"><button class='off-button'>Turn OFF</button></a>";
+  html += "<h2>Tank 2 - FILTER TANK to PLANTS TANK</h2>";
+  html += "<a href=\"/tank2?state=on\"><button class='on-button'>Turn ON</button></a>";
+  html += "<a href=\"/tank2?state=off\"><button class='off-button'>Turn OFF</button></a>";
+  html += "<h2>Tank 3 - PLANTS TANK to FISH TANK</h2>";
+  html += "<a href=\"/tank3?state=on\"><button class='on-button'>Turn ON</button></a>";
+  html += "<a href=\"/tank3?state=off\"><button class='off-button'>Turn OFF</button></a>";
+  html += "</div>";
+  html += "</body></html>";
+
+  server.send(200, "text/html", html);
+}
+
+void handleTank1() {
+  if (server.arg("state") == "on") {
+    digitalWrite(PUMP1_PIN, LOW); // Activate pump 1
+  } else {
+    digitalWrite(PUMP1_PIN, HIGH); // Deactivate pump 1
+  }
+  server.sendHeader("Location", "/");
+  server.send(303);
+}
+
+void handleTank2() {
+  if (server.arg("state") == "on") {
+    digitalWrite(PUMP2_PIN, LOW); // Activate pump 2
+  } else {
+    digitalWrite(PUMP2_PIN, HIGH); // Deactivate pump 2
+  }
+  server.sendHeader("Location", "/");
+  server.send(303);
+}
+
+void handleTank3() {
+  if (server.arg("state") == "on") {
+    digitalWrite(PUMP3_PIN, LOW); // Activate pump 3
+  } else {
+    digitalWrite(PUMP3_PIN, HIGH); // Deactivate pump 3
+  }
+  server.sendHeader("Location", "/");
+  server.send(303);
+}
